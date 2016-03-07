@@ -2,18 +2,36 @@
 
 namespace Jenko\Flysystem;
 
+use Gaufrette\Adapter;
 use League\Flysystem\Adapter\AbstractAdapter;
+use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
+use League\Flysystem\Adapter\Polyfill\StreamedReadingTrait;
 use League\Flysystem\Config;
 
 class GaufretteAdapter extends AbstractAdapter
 {
+    use NotSupportingVisibilityTrait;
+    use StreamedReadingTrait;
+
+    /**
+     * @var Adapter
+     */
+    private $adapter;
+
+    /**
+     * @param Adapter $adapter
+     */
+    public function __construct(Adapter $adapter)
+    {
+        $this->adapter = $adapter;
+    }
 
     /**
      * {@inheritdoc}
      */
     public function write($path, $contents, Config $config)
     {
-        // TODO: Implement write() method.
+        return $this->adapter->write($path, $contents);
     }
 
     /**
@@ -21,7 +39,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function writeStream($path, $resource, Config $config)
     {
-        // TODO: Implement writeStream() method.
+        return $this->adapter->write($path, stream_get_contents($resource));
     }
 
     /**
@@ -29,7 +47,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function update($path, $contents, Config $config)
     {
-        // TODO: Implement update() method.
+        throw new UnsupportedAdapterMethodException('update is not supported by this adapter.');
     }
 
     /**
@@ -37,7 +55,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function updateStream($path, $resource, Config $config)
     {
-        // TODO: Implement updateStream() method.
+        throw new UnsupportedAdapterMethodException('update is not supported by this adapter.');
     }
 
     /**
@@ -45,7 +63,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function rename($path, $newpath)
     {
-        // TODO: Implement rename() method.
+        return $this->adapter->rename($path, $newpath);
     }
 
     /**
@@ -53,7 +71,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function copy($path, $newpath)
     {
-        // TODO: Implement copy() method.
+        throw new UnsupportedAdapterMethodException('copy is not supported by this adapter.');
     }
 
     /**
@@ -61,7 +79,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function delete($path)
     {
-        // TODO: Implement delete() method.
+        return $this->adapter->delete($path);
     }
 
     /**
@@ -69,7 +87,11 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function deleteDir($dirname)
     {
-        // TODO: Implement deleteDir() method.
+        if ($this->adapter->isDirectory($dirname)) {
+            return $this->adapter->delete($dirname);    
+        }
+        
+        throw new \InvalidArgumentException($dirname . 'is not a valid directory.');
     }
 
     /**
@@ -77,15 +99,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function createDir($dirname, Config $config)
     {
-        // TODO: Implement createDir() method.
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setVisibility($path, $visibility)
-    {
-        // TODO: Implement setVisibility() method.
+        throw new UnsupportedAdapterMethodException('createDir is not supported by this adapter.');
     }
 
     /**
@@ -93,7 +107,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function has($path)
     {
-        // TODO: Implement has() method.
+        return $this->adapter->exists($path);
     }
 
     /**
@@ -101,15 +115,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function read($path)
     {
-        // TODO: Implement read() method.
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function readStream($path)
-    {
-        // TODO: Implement readStream() method.
+        return ['contents' => $this->adapter->read($path)];
     }
 
     /**
@@ -117,7 +123,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function listContents($directory = '', $recursive = false)
     {
-        // TODO: Implement listContents() method.
+        return $this->adapter->keys();
     }
 
     /**
@@ -125,7 +131,11 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function getMetadata($path)
     {
-        // TODO: Implement getMetadata() method.
+        if ($this->adapter instanceof Adapter\MetadataSupporter) {
+            return $this->adapter->getMetadata($path);
+        }
+        
+        throw new UnsupportedAdapterMethodException('getMetadata is not supported by this adapter.');
     }
 
     /**
@@ -133,7 +143,11 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function getSize($path)
     {
-        // TODO: Implement getSize() method.
+        if ($this->adapter instanceof Adapter\SizeCalculator) {
+            return $this->adapter->size($path);
+        }
+
+        throw new UnsupportedAdapterMethodException('getSize is not supported by this adapter.');    
     }
 
     /**
@@ -141,7 +155,11 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function getMimetype($path)
     {
-        // TODO: Implement getMimetype() method.
+        if ($this->adapter instanceof Adapter\MimeTypeProvider) {
+            return $this->adapter->mimeType($path);
+        }
+
+        throw new UnsupportedAdapterMethodException('getMimetype is not supported by this adapter.');
     }
 
     /**
@@ -149,14 +167,6 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function getTimestamp($path)
     {
-        // TODO: Implement getTimestamp() method.
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getVisibility($path)
-    {
-        // TODO: Implement getVisibility() method.
+        return $this->adapter->mtime($path);
     }
 }

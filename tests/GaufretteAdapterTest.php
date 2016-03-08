@@ -36,15 +36,19 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(true, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testUpdate()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->update('filename', 'foo', $this->config);
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testUpdateStream()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->updateStream('filename', tmpfile(), $this->config);
     }
 
@@ -54,9 +58,11 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(true, $this->gaufrette->rename('filename', 'newfilename'));
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testCopy()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->copy('filename', 'newfilename');
     }
 
@@ -73,24 +79,30 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(true, $this->gaufrette->deleteDir('directoryName'));
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
     public function testDeleteDirThrowsExceptionIfNonDirectory()
     {
         $this->gaufretteMock->expects($this->never())->method('delete');
         $this->gaufretteMock->expects($this->once())->method('isDirectory')->willReturn(false);
 
-        $this->expectException('\InvalidArgumentException');
         $this->gaufrette->deleteDir('directoryName');
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testCreateDir()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->createDir('directoryName', $this->config);
     }
 
+    /**
+     * @expectedException \LogicException
+     */
     public function testSetVisibility()
     {
-        $this->expectException('LogicException');
         $this->gaufrette->setVisibility('filename', 'visible');
     }
 
@@ -136,9 +148,11 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($metadata, $gaufrette->getMetadata('filename'));
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testGetMetadataThrowsExceptionIfAdapterUnsupported()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->getMetadata('filename');
     }
 
@@ -151,9 +165,11 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(100, $gaufrette->getSize('filename'));
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testGetSizeThrowsExceptionIfAdapterUnsupported()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->getSize('filename');
     }
 
@@ -166,9 +182,11 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('application/pdf', $gaufrette->getMimetype('filename'));
     }
 
+    /**
+     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
+     */
     public function testGetMimetypeThrowsExceptionIfAdapterUnsupported()
     {
-        $this->expectException('Jenko\Flysystem\UnsupportedAdapterMethodException');
         $this->gaufrette->getMimetype('filename');
     }
 
@@ -178,9 +196,11 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1234567890, $this->gaufrette->getTimestamp('filename'));
     }
 
+    /**
+     * @expectedException \LogicException
+     */
     public function testGetVisiblity()
     {
-        $this->expectException('LogicException');
         $this->gaufrette->getVisibility('filename');
     }
 }

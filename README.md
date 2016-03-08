@@ -13,4 +13,47 @@ composer require jenko/flysystem-gaufrette
 
 ## Usage
 
-TODO
+Basic usage:
+
+```php
+use Jenko\Flysystem\GaufretteAdapter;
+use Gaufrette\Adapter\Local;
+
+$adapter = new GaufretteAdapter(
+    new Local(__DIR__ . '/path/to/files');
+); 
+
+$filesystem = new Filesystem($adapter);
+```
+
+Advanced usage:
+
+```php
+use Jenko\Flysystem\GaufretteAdapter;
+use Gaufrette\Adapter\Local;
+use Gaufrette\Adapter\Flysystem;
+
+$adapter = new GaufretteAdapter(
+    new Flysystem(
+        new GaufretteAdapter(
+            new Flysystem(
+                new GaufretteAdapter(
+                    new Flysystem(
+                        new GaufretteAdapter(
+                            new Local(
+                                __DIR__ . '/path/to/files'
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+);
+
+$filesystem = new Filesystem($adapter);
+```
+
+## Wait, what?
+
+TODO: Explanation

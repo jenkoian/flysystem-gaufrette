@@ -26,14 +26,28 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
 
     public function testWrite()
     {
-        $this->gaufretteMock->expects($this->once())->method('write')->willReturn(true);
-        $this->assertEquals(true, $this->gaufrette->write('filename', 'foo', $this->config));
+        $expected = ['contents' => 'foo', 'size' => 123, 'path' => 'filename'];
+        $this->gaufretteMock->expects($this->once())->method('write')->willReturn(123);
+        $this->assertEquals($expected, $this->gaufrette->write('filename', 'foo', $this->config));
+    }
+
+    public function testWriteWillReturnFalseIfNotWritten()
+    {
+        $this->gaufretteMock->expects($this->once())->method('write')->willReturn(false);
+        $this->assertEquals(false, $this->gaufrette->write('filename', 'foo', $this->config));
     }
 
     public function testWriteStream()
     {
-        $this->gaufretteMock->expects($this->once())->method('write')->willReturn(true);
-        $this->assertEquals(true, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
+        $expected = ['contents' => '', 'size' => 123, 'path' => 'filename'];
+        $this->gaufretteMock->expects($this->once())->method('write')->willReturn(123);
+        $this->assertEquals($expected, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
+    }
+
+    public function testWriteStreamWillReturnFalseIfNotWritten()
+    {
+        $this->gaufretteMock->expects($this->once())->method('write')->willReturn(false);
+        $this->assertEquals(false, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
     }
 
     /**
@@ -193,7 +207,7 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
     public function testGetTimestamp()
     {
         $this->gaufretteMock->expects($this->once())->method('mtime')->willReturn(1234567890);
-        $this->assertEquals(1234567890, $this->gaufrette->getTimestamp('filename'));
+        $this->assertEquals(['timestamp' => 1234567890], $this->gaufrette->getTimestamp('filename'));
     }
 
     /**

@@ -31,7 +31,13 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function write($path, $contents, Config $config)
     {
-        return $this->adapter->write($path, $contents);
+        $result = $this->adapter->write($path, $contents);
+
+        if ($result === false) {
+            return false;
+        }
+
+        return ['contents' => $contents, 'size' => $result, 'path' => $path];
     }
 
     /**
@@ -39,7 +45,14 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function writeStream($path, $resource, Config $config)
     {
-        return $this->adapter->write($path, stream_get_contents($resource));
+        $contents = stream_get_contents($resource);
+        $result = $this->adapter->write($path, $contents);
+
+        if ($result === false) {
+            return false;
+        }
+
+        return ['contents' => $contents, 'size' => $result, 'path' => $path];        
     }
 
     /**
@@ -167,6 +180,8 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function getTimestamp($path)
     {
-        return $this->adapter->mtime($path);
+        $timestamp = $this->adapter->mtime($path);
+
+        return ['timestamp' => $timestamp];
     }
 }

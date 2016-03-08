@@ -26,7 +26,7 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
 
     public function testWrite()
     {
-        $expected = ['contents' => 'foo', 'size' => 123, 'path' => 'filename'];
+        $expected = ['type' => 'file', 'contents' => 'foo', 'size' => 123, 'path' => 'filename'];
         $this->gaufretteMock->expects($this->once())->method('write')->willReturn(123);
         $this->assertEquals($expected, $this->gaufrette->write('filename', 'foo', $this->config));
     }
@@ -39,7 +39,7 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
 
     public function testWriteStream()
     {
-        $expected = ['contents' => '', 'size' => 123, 'path' => 'filename'];
+        $expected = ['type' => 'file', 'contents' => '', 'size' => 123, 'path' => 'filename'];
         $this->gaufretteMock->expects($this->once())->method('write')->willReturn(123);
         $this->assertEquals($expected, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
     }

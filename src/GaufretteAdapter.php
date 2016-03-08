@@ -37,7 +37,7 @@ class GaufretteAdapter extends AbstractAdapter
             return false;
         }
 
-        return ['contents' => $contents, 'size' => $result, 'path' => $path];
+        return ['type' => 'file', 'contents' => $contents, 'size' => $result, 'path' => $path];
     }
 
     /**
@@ -52,7 +52,7 @@ class GaufretteAdapter extends AbstractAdapter
             return false;
         }
 
-        return ['contents' => $contents, 'size' => $result, 'path' => $path];        
+        return ['type' => 'file', 'contents' => $contents, 'size' => $result, 'path' => $path];
     }
 
     /**
@@ -128,7 +128,7 @@ class GaufretteAdapter extends AbstractAdapter
      */
     public function read($path)
     {
-        return ['contents' => $this->adapter->read($path)];
+        return ['contents' => $this->adapter->read($path), 'path' => $path];
     }
 
     /**

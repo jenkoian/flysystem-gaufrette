@@ -32,11 +32,3 @@ tools:
     php_cpd:
         enabled: true
         excluded_dirs: [vendor, spec, stubs]
-build:
-    tests:
-        override:
-            -
-                command: 'vendor/bin/phpunit --coverage-clover=coverage.xml'
-                coverage:
-                    file: 'coverage.xml'
-                    format: 'php-clover'

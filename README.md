@@ -33,6 +33,7 @@ use Jenko\Flysystem\GaufretteAdapter;
 use Gaufrette\Adapter\Local;
 use Gaufrette\Adapter\Flysystem;
 
+// Hadouken!
 $adapter = new GaufretteAdapter(
     new Flysystem(
         new GaufretteAdapter(

@@ -13,6 +13,11 @@
             <directory suffix=".php">./tests/</directory>
         </testsuite>
     </testsuites>
+    <groups>
+        <exclude>
+            <group>integration</group>
+        </exclude>
+    </groups>
     <filter>
         <whitelist>
             <directory suffix=".php">./src/</directory>

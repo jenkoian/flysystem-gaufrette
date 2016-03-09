@@ -1,4 +1,4 @@
-# Flysystem Adapter for Gaufrette
+# [Flysystem](https://github.com/thephpleague/flysystem) Adapter for [Gaufrette](https://github.com/KnpLabs/Gaufrette)
 
 [![Build Status](https://img.shields.io/travis/jenkoian/flysystem-gaufrette/master.svg?style=flat-square)](https://travis-ci.org/jenkoian/flysystem-gaufrette)
 [![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/jenkoian/flysystem-gaufrette.svg?style=flat-square)](https://scrutinizer-ci.com/g/jenkoian/flysystem-gaufrette/code-structure)

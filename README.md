@@ -60,7 +60,7 @@ $filesystem = new Filesystem($adapter);
 [Gaufrette added a Flysystem adapter](https://github.com/KnpLabs/Gaufrette/blob/master/doc/adapters/flysystem.md) so it made sense to reciprocate the love and have an adapter going in the other direction.
 Although it does feel a little [yo dawg](https://cloud.githubusercontent.com/assets/993350/13571485/99fd5f90-e475-11e5-9f2c-04dea88713fd.png) it is useful. For example
 if you have a codebase which is quite coupled to the flysystem API (legacy app, obv you wouldn't have done this) but wish to make a switch to Gaufrette, this will allow you to do so without having to go through 
-your codebase changing all calls to the old API.
+your codebase changing all calls to the old API. For more information on actual usage, see this blog post: http://jenko.me/legacy/2017/03/07/from-gaufrette-to-flysystem-and-back-again/
 
 It also allows you to construct fun, bi-directional, [hadouken-esque](https://imgur.com/BtjZedW) nesting as seen in the advanced usage example above.
 

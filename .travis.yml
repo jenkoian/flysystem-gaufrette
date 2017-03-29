@@ -15,6 +15,7 @@ install:
   - composer install --dev
 
 script:
+  - bin/security-checker security:check
   - bin/phpunit
 
 after_script:

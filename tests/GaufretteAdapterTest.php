@@ -1,140 +1,146 @@
 <?php
 
-class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
+namespace Jenko\Flysystem\Tests;
+
+use Gaufrette\Adapter;
+use Jenko\Flysystem\GaufretteAdapter;
+use Jenko\Flysystem\UnsupportedAdapterMethodException;
+use League\Flysystem\Config;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\UnableToDeleteDirectory;
+use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToWriteFile;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class GaufretteAdapterTest extends TestCase
 {
     /**
-     * @var \Jenko\Flysystem\GaufretteAdapter
+     * @var GaufretteAdapter|null
      */
     private $gaufrette;
 
     /**
-     * @var Gaufrette\Adapter|\PHPUnit_Framework_MockObject_MockObject
+     * @var Adapter|MockObject|null
      */
     private $gaufretteMock;
 
     /**
-     * @var \League\Flysystem\Config
+     * @var Config|null
      */
     private $config;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        $this->gaufretteMock = $this->getMock('Gaufrette\Adapter');
-        $this->gaufrette = new \Jenko\Flysystem\GaufretteAdapter($this->gaufretteMock);
-        $this->config = new \League\Flysystem\Config([]);
+        $this->gaufretteMock = $this->createMock(Adapter::class);
+        $this->gaufrette = new GaufretteAdapter($this->gaufretteMock);
+        $this->config = new Config([]);
     }
 
-    public function testWrite()
+    public function testWrite(): void
     {
-        $expected = ['type' => 'file', 'contents' => 'foo', 'size' => 123, 'path' => 'filename'];
         $this->gaufretteMock->expects($this->once())->method('write')->willReturn(123);
-        $this->assertEquals($expected, $this->gaufrette->write('filename', 'foo', $this->config));
+        $this->gaufrette->write('filename', 'foo', $this->config);
     }
 
-    public function testWriteWillReturnFalseIfNotWritten()
+    public function testWriteWillThrowExceptionIfNotWritten(): void
     {
         $this->gaufretteMock->expects($this->once())->method('write')->willReturn(false);
-        $this->assertEquals(false, $this->gaufrette->write('filename', 'foo', $this->config));
+        $this->expectException(UnableToWriteFile::class);
+        $this->gaufrette->write('filename', 'foo', $this->config);
     }
 
-    public function testWriteStream()
+    public function testWriteStream(): void
     {
         $expected = ['type' => 'file', 'contents' => '', 'size' => 123, 'path' => 'filename'];
         $this->gaufretteMock->expects($this->once())->method('write')->willReturn(123);
-        $this->assertEquals($expected, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
+        $this->gaufrette->writeStream('filename', tmpfile(), $this->config);
     }
 
-    public function testWriteStreamWillReturnFalseIfNotWritten()
+    public function testWriteStreamWillThrowExceptionIfNotWritten(): void
     {
         $this->gaufretteMock->expects($this->once())->method('write')->willReturn(false);
-        $this->assertEquals(false, $this->gaufrette->writeStream('filename', tmpfile(), $this->config));
+        $this->expectException(UnableToWriteFile::class);
+        $this->gaufrette->writeStream('filename', tmpfile(), $this->config);
     }
 
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testUpdate()
-    {
-        $this->gaufrette->update('filename', 'foo', $this->config);
-    }
-
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testUpdateStream()
-    {
-        $this->gaufrette->updateStream('filename', tmpfile(), $this->config);
-    }
-
-    public function testRename()
+    public function testMove(): void
     {
         $this->gaufretteMock->expects($this->once())->method('rename')->willReturn(true);
-        $this->assertEquals(true, $this->gaufrette->rename('filename', 'newfilename'));
+        $this->gaufrette->move('filename', 'newfilename', $this->config);
     }
 
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testCopy()
+    public function testMoveWillThrowExceptionIfNotMoved(): void
     {
-        $this->gaufrette->copy('filename', 'newfilename');
+        $this->gaufretteMock->expects($this->once())->method('rename')->willReturn(false);
+        $this->expectException(UnableToMoveFile::class);
+        $this->gaufrette->move('filename', 'newfilename', $this->config);
     }
 
-    public function testDelete()
+    public function testCopy(): void
+    {
+        $this->expectException(UnsupportedAdapterMethodException::class);
+        $this->gaufrette->copy('filename', 'newfilename', $this->config);
+    }
+
+    public function testDelete(): void
     {
         $this->gaufretteMock->expects($this->once())->method('delete')->willReturn(true);
-        $this->assertEquals(true, $this->gaufrette->delete('filename'));
+        $this->gaufrette->delete('filename');
     }
 
-    public function testDeleteDir()
+    public function testDeleteDirectory(): void
     {
         $this->gaufretteMock->expects($this->once())->method('delete')->willReturn(true);
         $this->gaufretteMock->expects($this->once())->method('isDirectory')->willReturn(true);
-        $this->assertEquals(true, $this->gaufrette->deleteDir('directoryName'));
+        $this->gaufrette->deleteDirectory('directoryName');
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testDeleteDirThrowsExceptionIfNonDirectory()
+    public function testDeleteDirectoryDoesNotCallDeleteIfNotDirectory(): void
     {
         $this->gaufretteMock->expects($this->never())->method('delete');
         $this->gaufretteMock->expects($this->once())->method('isDirectory')->willReturn(false);
 
-        $this->gaufrette->deleteDir('directoryName');
+        $this->gaufrette->deleteDirectory('directoryName');
     }
 
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testCreateDir()
+    public function testDeleteDirectoryThrowsExceptionIfNotDeleted(): void
     {
-        $this->gaufrette->createDir('directoryName', $this->config);
+        $this->gaufretteMock->expects($this->once())->method('delete')->willReturn(false);
+        $this->gaufretteMock->expects($this->once())->method('isDirectory')->willReturn(true);
+
+        $this->expectException(UnableToDeleteDirectory::class);
+
+        $this->gaufrette->deleteDirectory('directoryName');
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    public function testSetVisibility()
+    public function testCreateDirectory(): void
     {
+        $this->expectException(UnsupportedAdapterMethodException::class);
+        $this->gaufrette->createDirectory('directoryName', $this->config);
+    }
+
+    public function testSetVisibility(): void
+    {
+        $this->expectException(UnsupportedAdapterMethodException::class);
         $this->gaufrette->setVisibility('filename', 'visible');
     }
 
-    public function testHas()
+    public function testFileExists(): void
     {
         $this->gaufretteMock->expects($this->once())->method('exists')->willReturn(true);
-        $this->assertEquals(true, $this->gaufrette->has('filename'));
+        $this->assertEquals(true, $this->gaufrette->fileExists('filename'));
     }
 
-    public function testRead()
+    public function testRead(): void
     {
         $this->gaufretteMock->expects($this->once())->method('read')->willReturn('foo');
         
         $data = $this->gaufrette->read('filename');
-        $this->assertEquals('foo', $data['contents']);
+        $this->assertEquals('foo', $data);
     }
 
-    public function testReadStream()
+    public function testReadStream(): void
     {
         $stream = tmpfile();
         fwrite($stream, 'foo');
@@ -142,86 +148,60 @@ class GaufretteAdapterTest extends \PHPUnit_Framework_TestCase
         $this->gaufretteMock->expects($this->once())->method('read')->willReturn('foo');
 
         $data = $this->gaufrette->readStream('filename');
-        $this->assertEquals('foo', stream_get_contents($data['stream']));
+        $this->assertEquals('foo', stream_get_contents($data));
     }
 
-    public function testListContents()
+    public function testListContents(): void
     {
         $keys = ['foo', 'bar', 'baz'];
-        $this->gaufretteMock->expects($this->once())->method('keys')->willReturn($keys);
-        $this->assertEquals($keys, $this->gaufrette->listContents('directoryName'));
+        $this->gaufretteMock->expects($this->exactly(2))->method('keys')->willReturn($keys);
+
+        // We don't use the second param ($deep) but check for both anyhow.
+        $this->assertEquals($keys, $this->gaufrette->listContents('directoryName', false));
+        $this->assertEquals($keys, $this->gaufrette->listContents('directoryName', true));
     }
 
-    public function testGetMetadata()
+    public function testFileSize(): void
     {
-        $metadata = ['isDir' => true, 'bar' => 'baz'];
-        $gaufretteMetadataSupporterMock = $this->getMock('GaufretteMetadataSupporter');
-        $gaufretteMetadataSupporterMock->expects($this->once())->method('getMetadata')->willReturn($metadata);
-
-        $gaufrette = new \Jenko\Flysystem\GaufretteAdapter($gaufretteMetadataSupporterMock);
-        $this->assertEquals($metadata, $gaufrette->getMetadata('filename'));
-    }
-
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testGetMetadataThrowsExceptionIfAdapterUnsupported()
-    {
-        $this->gaufrette->getMetadata('filename');
-    }
-
-    public function testGetSize()
-    {
-        $gaufretteSizeMock = $this->getMock('GaufretteSizeCalculator');
+        $gaufretteSizeMock = $this->createMock(GaufretteSizeCalculator::class);
         $gaufretteSizeMock->expects($this->once())->method('size')->willReturn(100);
 
-        $gaufrette = new \Jenko\Flysystem\GaufretteAdapter($gaufretteSizeMock);
-        $this->assertEquals(100, $gaufrette->getSize('filename'));
+        $gaufrette = new GaufretteAdapter($gaufretteSizeMock);
+        $this->assertEquals(new FileAttributes('filename', 100), $gaufrette->fileSize('filename'));
     }
 
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testGetSizeThrowsExceptionIfAdapterUnsupported()
+    public function testFileSizeThrowsExceptionIfAdapterUnsupported(): void
     {
-        $this->gaufrette->getSize('filename');
+        $this->expectException(UnsupportedAdapterMethodException::class);
+        $this->gaufrette->fileSize('filename');
     }
 
-    public function testGetMimetype()
+    public function testMimeType(): void
     {
-        $gaufretteMimetypeMock = $this->getMock('GaufretteMimeTypeProvider');
+        $gaufretteMimetypeMock = $this->createMock(GaufretteMimeTypeProvider::class);
         $gaufretteMimetypeMock->expects($this->once())->method('mimeType')->willReturn('application/pdf');
 
-        $gaufrette = new \Jenko\Flysystem\GaufretteAdapter($gaufretteMimetypeMock);
-        $this->assertEquals('application/pdf', $gaufrette->getMimetype('filename'));
+        $gaufrette = new GaufretteAdapter($gaufretteMimetypeMock);
+        $this->assertEquals(new FileAttributes('filename', null, null, null, 'application/pdf'), $gaufrette->mimeType('filename'));
     }
 
-    /**
-     * @expectedException Jenko\Flysystem\UnsupportedAdapterMethodException
-     */
-    public function testGetMimetypeThrowsExceptionIfAdapterUnsupported()
+    public function testMimeTypeThrowsExceptionIfAdapterUnsupported(): void
     {
-        $this->gaufrette->getMimetype('filename');
+        $this->expectException(UnsupportedAdapterMethodException::class);
+        $this->gaufrette->mimeType('filename');
     }
 
-    public function testGetTimestamp()
+    public function testLastModified(): void
     {
         $this->gaufretteMock->expects($this->once())->method('mtime')->willReturn(1234567890);
-        $this->assertEquals(['timestamp' => 1234567890], $this->gaufrette->getTimestamp('filename'));
+        $this->assertEquals(new FileAttributes('filename', null, null, 1234567890), $this->gaufrette->lastModified('filename'));
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    public function testGetVisiblity()
+    public function testVisiblity(): void
     {
-        $this->gaufrette->getVisibility('filename');
+        $this->expectException(UnsupportedAdapterMethodException::class);
+        $this->gaufrette->visibility('filename');
     }
-}
-
-interface GaufretteMetadataSupporter extends \Gaufrette\Adapter, \Gaufrette\Adapter\MetadataSupporter
-{
-
 }
 
 interface GaufretteSizeCalculator extends \Gaufrette\Adapter, \Gaufrette\Adapter\SizeCalculator

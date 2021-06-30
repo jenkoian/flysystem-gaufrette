@@ -3,16 +3,17 @@
 namespace Jenko\Flysystem;
 
 use Gaufrette\Adapter;
-use League\Flysystem\Adapter\AbstractAdapter;
-use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
-use League\Flysystem\Adapter\Polyfill\StreamedReadingTrait;
 use League\Flysystem\Config;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\UnableToDeleteDirectory;
+use League\Flysystem\UnableToDeleteFile;
+use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToReadFile;
+use League\Flysystem\UnableToWriteFile;
 
-class GaufretteAdapter extends AbstractAdapter
+class GaufretteAdapter implements FilesystemAdapter
 {
-    use NotSupportingVisibilityTrait;
-    use StreamedReadingTrait;
-
     /**
      * @var Adapter
      */
@@ -29,60 +30,48 @@ class GaufretteAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function write($path, $contents, Config $config)
+    public function write(string $path, string $contents, Config $config): void
     {
+        error_clear_last();
+
         $result = $this->adapter->write($path, $contents);
 
         if ($result === false) {
-            return false;
+            throw UnableToWriteFile::atLocation($path, error_get_last()['message'] ?? '');
         }
-
-        return ['type' => 'file', 'contents' => $contents, 'size' => $result, 'path' => $path];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function writeStream($path, $resource, Config $config)
+    public function writeStream(string $path, $contents, Config $config): void
     {
-        $contents = stream_get_contents($resource);
+        error_clear_last();
+
+        $contents = stream_get_contents($contents);
         $result = $this->adapter->write($path, $contents);
 
         if ($result === false) {
-            return false;
+            throw UnableToWriteFile::atLocation($path, error_get_last()['message'] ?? '');
         }
-
-        return ['type' => 'file', 'contents' => $contents, 'size' => $result, 'path' => $path];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function update($path, $contents, Config $config)
+    public function move(string $source, string $destination, Config $config): void
     {
-        throw new UnsupportedAdapterMethodException('update is not supported by this adapter.');
+        $result = $this->adapter->rename($source, $destination);
+
+        if ($result === false) {
+            throw UnableToMoveFile::fromLocationTo($source, $destination);
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function updateStream($path, $resource, Config $config)
-    {
-        throw new UnsupportedAdapterMethodException('update is not supported by this adapter.');
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function rename($path, $newpath)
-    {
-        return $this->adapter->rename($path, $newpath);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function copy($path, $newpath)
+    public function copy(string $source, string $destination, Config $config): void
     {
         throw new UnsupportedAdapterMethodException('copy is not supported by this adapter.');
     }
@@ -90,35 +79,43 @@ class GaufretteAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function delete($path)
+    public function delete(string $path): void
     {
-        return $this->adapter->delete($path);
-    }
+        error_clear_last();
 
-    /**
-     * {@inheritdoc}
-     */
-    public function deleteDir($dirname)
-    {
-        if ($this->adapter->isDirectory($dirname)) {
-            return $this->adapter->delete($dirname);    
+        if ( ! $this->adapter->delete($path)) {
+            throw UnableToDeleteFile::atLocation($path, error_get_last()['message'] ?? '');
         }
-        
-        throw new \InvalidArgumentException($dirname . 'is not a valid directory.');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function createDir($dirname, Config $config)
+    public function deleteDirectory(string $path): void
     {
-        throw new UnsupportedAdapterMethodException('createDir is not supported by this adapter.');
+        if ( ! $this->adapter->isDirectory($path)) {
+            return;
+        }
+
+        error_clear_last();
+
+        if ( ! $this->adapter->delete($path)) {
+            throw UnableToDeleteDirectory::atLocation($path, error_get_last()['message'] ?? '');
+        }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function has($path)
+    public function createDirectory(string $path, Config $config): void
+    {
+        throw new UnsupportedAdapterMethodException('createDirectory is not supported by this adapter.');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fileExists(string $path): bool
     {
         return $this->adapter->exists($path);
     }
@@ -126,15 +123,36 @@ class GaufretteAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function read($path)
+    public function read(string $path): string
     {
-        return ['contents' => $this->adapter->read($path), 'path' => $path];
+        $contents = $this->adapter->read($path);
+
+        if ($contents === false) {
+            throw UnableToReadFile::fromLocation($path, error_get_last()['message'] ?? '');
+        }
+
+        return $contents;
+    }
+
+    public function readStream(string $path)
+    {
+        $contents = $this->read($path);
+
+        if ($contents === false) {
+            throw UnableToReadFile::fromLocation($path, error_get_last()['message'] ?? '');
+        }
+
+        $stream = fopen('php://temp', 'w+b');
+        fwrite($stream, $contents);
+        rewind($stream);
+
+        return $stream;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function listContents($directory = '', $recursive = false)
+    public function listContents(string $path, bool $deep): iterable
     {
         return $this->adapter->keys();
     }
@@ -142,46 +160,44 @@ class GaufretteAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getMetadata($path)
-    {
-        if ($this->adapter instanceof Adapter\MetadataSupporter) {
-            return $this->adapter->getMetadata($path);
-        }
-        
-        throw new UnsupportedAdapterMethodException('getMetadata is not supported by this adapter.');
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSize($path)
+    public function fileSize(string $path): FileAttributes
     {
         if ($this->adapter instanceof Adapter\SizeCalculator) {
-            return $this->adapter->size($path);
+            return new FileAttributes($path, $this->adapter->size($path));
         }
 
-        throw new UnsupportedAdapterMethodException('getSize is not supported by this adapter.');    
+        throw new UnsupportedAdapterMethodException('fileSize is not supported by this adapter.');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getMimetype($path)
+    public function mimeType(string $path): FileAttributes
     {
         if ($this->adapter instanceof Adapter\MimeTypeProvider) {
-            return $this->adapter->mimeType($path);
+            return new FileAttributes($path, null, null, null, $this->adapter->mimeType($path));
         }
 
-        throw new UnsupportedAdapterMethodException('getMimetype is not supported by this adapter.');
+        throw new UnsupportedAdapterMethodException('mimeType is not supported by this adapter.');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getTimestamp($path)
+    public function lastModified(string $path): FileAttributes
     {
         $timestamp = $this->adapter->mtime($path);
 
-        return ['timestamp' => $timestamp];
+        return new FileAttributes($path, null, null, $timestamp);
+    }
+
+    public function setVisibility(string $path, string $visibility): void
+    {
+        throw new UnsupportedAdapterMethodException('setVisibility is not supported by this adapter.');
+    }
+
+    public function visibility(string $path): FileAttributes
+    {
+        throw new UnsupportedAdapterMethodException('visibility is not supported by this adapter.');
     }
 }

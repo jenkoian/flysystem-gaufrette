@@ -3,3 +3,4 @@ bin
 composer.lock
 coverage
 coverage.xml
+.phpunit.result.cache

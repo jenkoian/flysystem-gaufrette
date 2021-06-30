@@ -1,46 +1,52 @@
 <?php
 
+namespace Jenko\Flysystem\Tests\Integration;
+
+use Gaufrette\Adapter\Flysystem;
+use Gaufrette\Adapter\Local;
+use Jenko\Flysystem\GaufretteAdapter;
+use League\Flysystem\Filesystem;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @group integration
  */
-class GaufretteLocalAdapterTest extends PHPUnit_Framework_TestCase
+class GaufretteLocalAdapterTest extends TestCase
 {
     private $local;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        $this->local = new \Jenko\Flysystem\GaufretteAdapter(
-            new \Gaufrette\Adapter\Local(__DIR__ . '/resources')
+        $this->local = new GaufretteAdapter(
+            new Local(__DIR__ . '/resources')
         );
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         array_map('unlink', glob(__DIR__ . '/resources/*'));
     }
 
-    public function testLocalAdapter()
+    public function testLocalAdapter(): void
     {
-        $filesystem = new \League\Flysystem\Filesystem($this->local);
+        $filesystem = new Filesystem($this->local);
 
-        $written = $filesystem->write('test.txt', 'foo');
-        $this->assertTrue($written);
-
+        $filesystem->write('test.txt', 'foo', []);
         $data = $filesystem->read('test.txt');
 
         $this->assertEquals('foo', $data);
     }
     
-    public function testHadouken()
+    public function testHadouken(): void
     {
-        $local = new \Jenko\Flysystem\GaufretteAdapter(
-            new \Gaufrette\Adapter\Flysystem(
-                new \Jenko\Flysystem\GaufretteAdapter(
-                    new \Gaufrette\Adapter\Flysystem(
-                        new \Jenko\Flysystem\GaufretteAdapter(
-                            new \Gaufrette\Adapter\Flysystem(
-                                new \Jenko\Flysystem\GaufretteAdapter(
-                                    new \Gaufrette\Adapter\Local(
+        $local = new GaufretteAdapter(
+            new Flysystem(
+                new GaufretteAdapter(
+                    new Flysystem(
+                        new GaufretteAdapter(
+                            new Flysystem(
+                                new GaufretteAdapter(
+                                    new Local(
                                         __DIR__ . '/resources'
                                     )
                                 )
@@ -51,9 +57,9 @@ class GaufretteLocalAdapterTest extends PHPUnit_Framework_TestCase
             )
         );
 
-        $filesystem = new \League\Flysystem\Filesystem($local);
+        $filesystem = new Filesystem($local);
 
-        $written = $filesystem->write('test.txt', 'foo');
+        $written = $filesystem->write('test.txt', 'foo', []);
         $this->assertTrue($written);
 
         $data = $filesystem->read('test.txt');
